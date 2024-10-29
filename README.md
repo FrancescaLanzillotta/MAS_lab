@@ -13,8 +13,6 @@ In the following image we can see an example of the populated grid where:
 
 <img src="/img/Base_grid.png" width="500" height="400">
 
-![Base grid](/img/Base_grid.png)
+<img src="/img/plot%20no%20obstacle%20.png" width="600" height="400">
 
-
-![Synchronous Value Iteration performed](/img/plot%20no%20obstacle%20.png)
-
+<img src="/img/async_plot.png" width="600" height="400">
