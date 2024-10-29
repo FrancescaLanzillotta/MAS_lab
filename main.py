@@ -585,7 +585,7 @@ class MovingObject:
 if __name__ == '__main__':
     rows = 6
     columns = 6
-    sync = True
+    sync = False
     eps = 1e-9
     random.seed(42)
 
@@ -663,7 +663,7 @@ if __name__ == '__main__':
     #
     # plt.tight_layout()
     #
-    # plt.savefig('plot.png', dpi=800)
+    # plt.savefig('img/', dpi=800)
     plt.show()
 
 
