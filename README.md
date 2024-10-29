@@ -11,7 +11,7 @@ In the following image we can see an example of the populated grid where:
 - &#11043; are the enemies
 - ✘ is the obstacle
 
-<img src="/img/Base_grid.png" width="400" height="300">
+<img src="/img/Base_grid.png" width="500" height="400">
 
 ![Base grid](/img/Base_grid.png)
 
