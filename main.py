@@ -311,7 +311,7 @@ class Grid:
 
         for i in range(self.rows):
             for j in range(self.columns):
-                annotate_grid_plot(ax, 'COORDS', i, j)
+                # annotate_grid_plot(ax, 'COORDS', i, j)
                 if self.grid[i][j] == Cell.OBSTACLE:
                     annotate_grid_plot(ax, Cell.OBSTACLE.name, i, j)
 
@@ -606,7 +606,7 @@ if __name__ == '__main__':
     print(policy)
     print(f'Iterations: {it}')
 
-    # anim = g.show_grid(100)
+    anim = g.show_grid(100)
 
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 6))
     if sync:
