@@ -12,7 +12,8 @@ terms of the values of its neighbouring states.
 The main idea behind this algorithm hinges on a modified version of the Bellman optimality equation
  where the value function is iteratively improved by optimizing with respect to the previous decisions.
   
-![d](https://latex.codecogs.com/svg.image?&space;V_{k&plus;1}(x)=\max_u\left[r(x,u)&plus;\sum_{x'\in\mathbb{X}}\phi(x'|x,u)V_k(x')\right])
+![]()
+<img src="https://latex.codecogs.com/png.image?\dpi{600}\bg{white}&space;V_{k&plus;1}(x)=\max_u\left[r(x,u)&plus;\sum_{x%27\in\mathbb{X}}\phi(x%27|x,u)V_k(x%27)\right]" width="522" height="80">
 ---
 ## Implementation
 In the following image we can see an example of the populated grid where:
