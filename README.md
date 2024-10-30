@@ -9,7 +9,7 @@ To achieve this in VI, the Bellman equation is used to guide the process of iter
 estimates for each state, providing a recursive relationship that expresses the value of a state in 
 terms of the values of its neighbouring states.
 
-The main idea behind this algorithm hinges on a modified version of the Bellman optimality equation
+The main step in algorithm hinges on a modified version of the Bellman optimality equation
  where the value function is iteratively improved by optimizing with respect to the previous decisions.
   
 ![]()
