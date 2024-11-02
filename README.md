@@ -17,11 +17,11 @@ where
 
 - 𝑥, 𝑥' ∈ 𝕏 (state space)
 - 𝑢 ∈ 𝕌 (action space)
-- φ is the probability density function expressing the probability of transitioning from state 𝑥 to state 
+- φ(𝑥'|𝑥,𝑢) is the probability density function expressing the probability of transitioning from state 𝑥 to state 
 𝑥' when 𝑢 is applied
-- Immediate reward r received by the agent in state 𝑥 when taking action 𝑢
- 
-From the optimal values 𝑉 computed from the algorithm, we can extract the optimal policy as 
+- 𝑟(𝑥,𝑢) is the immediate reward received by the agent in state 𝑥 when taking action 𝑢
+
+From the optimal values 𝑉 computed in the algorithm, we can extract the optimal policy as 
 
 <p align="center">
 <img src="https://latex.codecogs.com/png.image?\dpi{600}\bg{white}\gamma(x)=\text{arg}\max_u\left[r(x,u)&plus;\sum_{x%27\in\mathbb{X}}\phi(x%27|x,u)V(x%27)\right]" width="522" height="80" alt="Optimal Policy formula">
@@ -44,7 +44,7 @@ other cells, the reward is -0.04 to incentivize the agent to quickly reach the g
 
 ### Synchronous Value Iteration
 In the synchronous version of Value Iteration all states are updated at each iteration. In this 
-implementation, stops when the algorithm stops when the change in the values between iterations is less 
+implementation, the algorithm stops when the change in the values between iterations is less 
 than the threshold ε.
 
 <p align="center">
@@ -52,10 +52,11 @@ than the threshold ε.
 </p>
 
 ### Asynchronous Value Iteration
-In this version, at each iteration one state is picked randomly and its value is updated using the Bellman
-operator. Despite increasing the number of iterations for convergence, this algorithm is faster than its
+In this version, at each iteration one state is picked randomly and only its value is updated. Despite 
+increasing the number of iterations for convergence, this algorithm is faster than its
 synchronous counterpart. Termination is guaranteed provided that all the states are selected infinitely
  often.
+
 <p align="center">
 <img src="/img/async_plot.png" width="700" height="420">
 </p>
