@@ -43,7 +43,7 @@ The reward for reaching the goal is +1 while the reward for being captured by th
 other cells, the reward is -0.04 to incentivize the agent to quickly reach the goal.
 
 ### Synchronous Value Iteration
-In the synchronous version of Value Iteration all states are updated at each iteration. In this 
+In the synchronous version of Value Iteration, all states are updated at each iteration. In this 
 implementation, the algorithm stops when the change in the values between iterations is less 
 than the threshold ε.
 
