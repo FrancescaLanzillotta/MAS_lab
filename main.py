@@ -166,13 +166,13 @@ def transition_probabilities(direction, possible_moves, main_prob=0.8):
         poss.remove(opp)
 
     for d in poss:
-        if d == direction:
-            probs[d] = main_prob
-        else:
-            if len(poss) > 1:
-                probs[d] = round((1 - main_prob) / (len(poss) - 1), 3)
+        if len(poss) > 1:
+            if d == direction:
+                probs[d] = main_prob
             else:
-                probs[d] = round(1 - main_prob, 3)
+                probs[d] = round((1 - main_prob) / (len(poss) - 1), 3)
+        else:
+            probs[d] = 1
 
     return probs
 
@@ -585,7 +585,7 @@ class MovingObject:
 if __name__ == '__main__':
     rows = 6
     columns = 6
-    sync = False
+    sync = True
     eps = 1e-9
     random.seed(42)
 
@@ -644,8 +644,8 @@ if __name__ == '__main__':
                 arts = ax2.findobj(
                     lambda artist: isinstance(artist, Text) and artist.get_text() == f'{val}')
                 [art.set_fontweight('bold') for art in arts]
-        # else:
-        #     annotate_grid_plot(ax2, 'OBSTACLE', *c)
+        else:
+            annotate_grid_plot(ax2, 'OBSTACLE', *c)
 
     #                                            ##### CONVERGENCE PLOT #####
 
