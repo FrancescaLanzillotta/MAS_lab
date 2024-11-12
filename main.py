@@ -2,12 +2,10 @@ import random
 import time
 from enum import Enum
 from pprint import pprint
-
-import matplotlib.pyplot
+from collections import deque
 from matplotlib.text import Text
 import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib as mpl
 from matplotlib import animation
 
 
@@ -78,6 +76,60 @@ def plot_static_grid(rows, columns, fig=None, ax=None):
     return fig, ax
 
 
+def plot_value_iteration(grid, v, policy, it, sync, display=True):
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 6))
+    if sync:
+        t_sync = 'Synchronous'
+    else:
+        t_sync = 'Asynchronous'
+
+    fig.suptitle(f'{t_sync} value iteration - {it} iterations', fontsize=18, x=0.5, y=0.9)
+
+    #                                            ##### POLICY GRID #####
+
+    fig, ax1 = plot_static_grid(grid.rows, grid.columns, fig, ax1)
+
+    for c in ((i, j) for i in range(grid.rows) for j in range(grid.columns)):
+        x, y = c
+        pol = policy[*c]
+        if g.get_cell(*c) != Cell.FREE and g.get_cell(*c) != Cell.AGENT:
+            annotate_grid_plot(ax1, g.get_cell(x, y).name, x, y)
+            # annotate_grid_plot(ax1, pol, x, y)
+        # else:
+        annotate_grid_plot(ax1, pol, x, y)
+
+    #                                            ##### VALUES GRID #####
+
+    extent = (0, columns, rows - 1, -1)
+
+    ax2.matshow(v, alpha=0.6, cmap='RdYlGn', extent=extent)
+    ax2.tick_params(axis='y', colors='white')
+    ax2.tick_params(axis='x', colors='white')
+    plt.grid(linewidth=1, color='black')
+
+    for c in ((i, j) for i in range(grid.rows) for j in range(grid.columns)):
+        if grid.get_cell(*c) == Cell.ENEMY:
+            val = -1.0
+        elif grid.get_cell(*c) == Cell.GOAL:
+            val = 1.0
+        else:
+            val = round(v[*c], 3)
+
+        if val != 0:
+            annotate_grid_plot(ax2, val, *c)
+            if abs(val) == 1:
+                arts = ax2.findobj(
+                    lambda artist: isinstance(artist, Text) and artist.get_text() == f'{val}')
+                [art.set_fontweight('bold') for art in arts]
+        else:
+            annotate_grid_plot(ax2, 'OBSTACLE', *c)
+
+    if display:
+        plt.show()
+
+    return fig, (ax1, ax2)
+
+
 def annotate_grid_plot(artist, type, x, y, c=None):
     """
     Helper function to add consistent textual annotations to grid. If type is not recognized, no annotation is made.
@@ -136,6 +188,11 @@ def annotate_grid_plot(artist, type, x, y, c=None):
             col = 'black'
             size = 18
             x_offset = 0.45
+        elif type == 'STAY':
+            s = 'STAY'
+            col = 'black'
+            size = 10
+            x_offset = 0.10
         elif isinstance(type, float):
             s = type
             col = 'black' if c is None else c
@@ -177,10 +234,18 @@ def transition_probabilities(direction, possible_moves, main_prob=0.8):
     return probs
 
 
+def random_transitions_probabilities(possible_moves):
+    probs = {}
+    prob = round(1 / len(possible_moves), 3)
+    for d in possible_moves:
+        probs[d] = prob
+
+    return probs
+
 class Grid:
     """
     Class representing grid world were the objects reside. The grid can contain obstacles, a single goal cell,
-    an arbitrary number of enemies and an arbitrary number of agents. The objects that can move within the grid are
+    an arbitrary number of enemies and an arbitrary number of agent. The objects that can move within the grid are
     tracked through class attributes.
     """
 
@@ -196,8 +261,8 @@ class Grid:
         self.rows = rows
         self.columns = columns
         self.goal = None
-        self.agents = []
-        self.enemies = []
+        self.agent = None
+        self.fail = None
         self.grid = np.full((rows, columns), Cell.FREE)
 
     def are_valid(self, x, y):
@@ -269,12 +334,12 @@ class Grid:
 
         if isinstance(obj, MovingObject) and self.get_cell(obj.x, obj.y) == Cell.FREE:
 
-            if obj.type == Cell.GOAL:
+            if obj.type == Cell.GOAL and self.goal is None:
                 self.goal = obj
-            elif obj.type == Cell.AGENT:
-                self.agents.append(obj)
-            elif obj.type == Cell.ENEMY:
-                self.enemies.append(obj)
+            elif obj.type == Cell.AGENT and self.agent is None:
+                self.agent = obj
+            elif obj.type == Cell.ENEMY and self.fail is None:
+                self.fail = obj
 
             self.set_cell(obj.x, obj.y, obj.type)
 
@@ -306,8 +371,13 @@ class Grid:
 
         fig, ax = plot_static_grid(self.rows, self.columns)
 
-        enemies_arts = []
-        agents_arts = []
+        m = max(len(self.agent.path), len(self.goal.path), len(self.fail.path))
+        if len(self.agent.path) < m:
+            self.agent.path += [self.agent.path[-1]] * (m - len(self.agent.path))
+        if len(self.goal.path) < m:
+            self.goal.path += [self.goal.path[-1]] * (m - len(self.goal.path))
+        if len(self.fail.path) < m:
+            self.fail.path += [self.fail.path[-1]] * (m - len(self.fail.path))
 
         for i in range(self.rows):
             for j in range(self.columns):
@@ -315,35 +385,26 @@ class Grid:
                 if self.grid[i][j] == Cell.OBSTACLE:
                     annotate_grid_plot(ax, Cell.OBSTACLE.name, i, j)
 
-        for en in self.enemies:
-            x, y = en.path[0]
-            art = annotate_grid_plot(ax, 'ENEMY', x, y)
-            enemies_arts.append(art)
+        enemy_art = annotate_grid_plot(ax, 'ENEMY', *self.fail.path[0])
 
-        for ag in self.agents:
-            x, y = ag.path[0]
-            art = annotate_grid_plot(ax, 'AGENT', x, y)
-            agents_arts.append(art)
+        agent_art = annotate_grid_plot(ax, 'AGENT', *self.agent.path[0])
 
         goal_path = self.goal.path
-        x, y = goal_path[0]
-        goal_art = annotate_grid_plot(ax, 'GOAL', x, y)
+        goal_art = annotate_grid_plot(ax, 'GOAL', *goal_path[0])
 
         def update(frame):
             x_goal, y_goal = goal_path[frame]
 
-            for en_idx in range(len(self.enemies)):
-                x, y = self.enemies[en_idx].path[frame]
-                enemies_arts[en_idx].set_x(y + 0.5)
-                enemies_arts[en_idx].set_y(x - 0.5)
+            x, y = self.fail.path[frame]
+            enemy_art.set_x(y + 0.5)
+            enemy_art.set_y(x - 0.5)
 
             on_goal = False
-            for ag_idx in range(len(self.agents)):
-                x, y = self.agents[ag_idx].path[frame]
-                agents_arts[ag_idx].set_x(y + 0.5)
-                agents_arts[ag_idx].set_y(x - 0.5)
-                if x == x_goal and y == y_goal:
-                    on_goal = True
+            x, y = self.agent.path[frame]
+            agent_art.set_x(y + 0.5)
+            agent_art.set_y(x - 0.5)
+            if x == x_goal and y == y_goal:
+                on_goal = True
 
             if not on_goal:
                 goal_art.set_x(y_goal + 0.5)
@@ -352,7 +413,7 @@ class Grid:
                 goal_art.set_x(-5)
                 goal_art.set_y(-5)
 
-            return goal_art, *enemies_arts, *agents_arts
+            return goal_art, enemy_art, agent_art
 
         global anim     # needs to be global to avoid garbage collection
         anim = animation.FuncAnimation(fig=fig, func=update, frames=len(goal_path), interval=interval,
@@ -409,16 +470,24 @@ class Grid:
 
         if c == Cell.AGENT or c == Cell.FREE:
             poss_dir = self.valid_directions(x, y)
+            g_poss_dir = self.valid_directions(self.goal.x, self.goal.y) + [Direction.STAY]
+            en_poss_dir = self.valid_directions(self.fail.x, self.fail.y) + [Direction.STAY]
+            g_probs = random_transitions_probabilities(g_poss_dir)
+            en_probs = random_transitions_probabilities(en_poss_dir)
             utility = {}
             for d in poss_dir:
-                probs = transition_probabilities(d, poss_dir, 0.8)
-                utility[d.name] = sum([prob * old_v[get_next_coord(poss_d, x, y)] for poss_d, prob in probs.items()])
+                c_probs = transition_probabilities(d, poss_dir, 0.8)
+                utility[d.name] = sum([c_prob * g_prob * en_prob * old_v[get_next_coord(c_poss_d, x, y)]
+                                       for c_poss_d, c_prob in c_probs.items()
+                                       for g_prob in g_probs.values()
+                                       for en_prob in en_probs.values()
+                                       ])
 
             best_dir = max(utility, key=utility.get)
             val = utility[best_dir]
 
         else:
-            best_dir = Direction.STAY
+            best_dir = Direction.STAY.name
             val = 0
 
         v[x][y] = reward + val
@@ -439,7 +508,6 @@ class Grid:
 
         policy = np.full_like(self.grid, Direction.STAY.name)
         v = self.get_reward_grid()
-
         satisfied = False
         it = 1      # one iteration already performed
         while not satisfied:
@@ -448,9 +516,18 @@ class Grid:
                 v, policy = self.value_iteration_step(old_v, v, policy, *state)
 
             it += 1
-            if np.all(abs(old_v - v) < eps):
-                satisfied = True
 
+            if it % 5000 == 0:
+                print(f'It-{it}')
+
+            # if it % 10000 == 0:
+                # plot_value_iteration(self, v, policy, it, True)
+
+            if np.all(abs(old_v - v) < eps) or it > 300000:
+                satisfied = True
+            else:
+                self.goal.random_move()
+                self.fail.random_move()
         return v, policy, it
 
     def async_value_iteration(self, eps=1e-9):
@@ -470,28 +547,41 @@ class Grid:
 
         satisfied = False
         it = 1
-        visited = set()
+        history = deque([v.copy()])
         while not satisfied:
             old_v = v.copy()
             state = (random.randint(0, self.rows - 1), random.randint(0, self.columns - 1))
-            if state not in visited:
-                visited.add(state)
+
             v, policy = self.value_iteration_step(old_v, v, policy, *state)
+
             it += 1
 
-            diff = abs(v[*state] - old_v[*state])
-            all_visited = len(visited) == self.rows * self.columns
-            if diff < eps and all_visited:
-                satisfied = True
-            elif all_visited:
-                visited.clear()
+            if it % 5000 == 0:
+                print(f'It-{it}')
+
+            # if it % 10000 == 0:
+                # plot_value_iteration(self, v, policy, it, False)
+
+            if len(history) >= 100:
+                first = history.popleft()
+                if (abs(first - v) < eps).all() or it > 10000000:
+                    print(abs(first - v))
+                    satisfied = True
+                else:
+                    history.append(v.copy())
+                    self.goal.random_move()
+                    self.fail.random_move()
+            else:
+                history.append(v.copy())
+                self.goal.random_move()
+                self.fail.random_move()
 
         return v, policy, it
 
 
 class MovingObject:
     """
-    Class representing objects that can move through the grid, such goals, enemies and agents.
+    Class representing objects that can move through the grid, such goals, enemies and agent.
     """
 
     def __init__(self, pos_x, pos_y, type, grid):
@@ -529,7 +619,7 @@ class MovingObject:
 
         val = False
         if isinstance(direction, Direction):
-            val = self.grid.is_reachable(get_next_coord(direction, self.x, self.y))
+            val = self.grid.is_reachable(*get_next_coord(direction, self.x, self.y))
 
         return val
 
@@ -575,7 +665,7 @@ class MovingObject:
         moves = [d for d in Direction]
         valid = False
         while not valid:
-            idx = random.randint(0, len(moves) - 2)
+            idx = random.randint(0, len(moves) - 1)
             if self.is_valid(moves[idx]):
                 valid = True
 
@@ -583,19 +673,18 @@ class MovingObject:
 
 
 if __name__ == '__main__':
-    rows = 6
-    columns = 6
+    rows = 5
+    columns = 5
     sync = True
-    eps = 1e-9
+    eps = 0.05
     random.seed(42)
 
     g = Grid(rows, columns)
     goal = MovingObject(0, 0, Cell.GOAL, g)
-    agent = MovingObject(3, 5, Cell.AGENT, g)
-    en1 = MovingObject(4, 3, Cell.ENEMY, g)
-    en2 = MovingObject(1, 4, Cell.ENEMY, g)
+    agent = MovingObject(2, 2, Cell.AGENT, g)
+    en1 = MovingObject(1, 2, Cell.ENEMY, g)
 
-    g.set_cell(2, 2, Cell.OBSTACLE)
+    # anim = g.show_grid(100)
 
     if sync:
         v, policy, it = g.sync_value_iteration(eps)
@@ -606,64 +695,8 @@ if __name__ == '__main__':
     print(policy)
     print(f'Iterations: {it}')
 
-    anim = g.show_grid(100)
+    fig, (ax1, ax2) = plot_value_iteration(g, v, policy, it, sync)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 6))
-    if sync:
-        t_sync = 'Synchronous'
-    else:
-        t_sync = 'Asynchronous'
-
-    fig.suptitle(f'{t_sync} value iteration - {it} iterations', fontsize=18, x=0.5, y=0.9)
-
-    #                                            ##### POLICY GRID #####
-
-    fig, ax1 = plot_static_grid(rows, columns, fig, ax1)
-
-    for c in ((i, j) for i in range(rows) for j in range(columns)):
-        x, y = c
-        pol = policy[*c]
-        if g.get_cell(*c) != Cell.FREE:
-            annotate_grid_plot(ax1, g.get_cell(x, y).name, x, y)
-        else:
-            annotate_grid_plot(ax1, pol, x, y)
-
-    #                                            ##### VALUES GRID #####
-
-    extent = (0, columns, rows - 1, -1)
-    ax2.matshow(v, alpha=0.6, cmap='RdYlGn', extent=extent)
-    ax2.tick_params(axis='y', colors='white')
-    ax2.tick_params(axis='x', colors='white')
-    plt.grid(linewidth=1, color='black')
-
-    for c in ((i, j) for i in range(rows) for j in range(columns)):
-        val = round(v[*c], 3)
-        if val != 0:
-            annotate_grid_plot(ax2, val, *c)
-            if abs(val) == 1:
-                arts = ax2.findobj(
-                    lambda artist: isinstance(artist, Text) and artist.get_text() == f'{val}')
-                [art.set_fontweight('bold') for art in arts]
-        else:
-            annotate_grid_plot(ax2, 'OBSTACLE', *c)
-
-    #                                            ##### CONVERGENCE PLOT #####
-
-    # fig3, ax3 = plt.subplots()
-    # keys = list(v_plot.keys())
-    # for key in v_plot.keys():
-    #     if g.get_cell(*key) != Cell.ENEMY:
-    #
-    #         # if (key[0] % 2 == 0 and key[1] % 2 == 1) or (key[0] % 2 == 1 and key[1] % 2 == 0):
-    #
-    #         ax3.plot(v_plot[key], label=f'({key[0]}, {key[1]})')
-    #
-    #         last_el = v_plot[key][-1]
-    #         ax3.text(len(v_plot[key]) -1, last_el, f'({key[0]}, {key[1]})')
-    #
-    # plt.tight_layout()
-    #
-    # plt.savefig('img/', dpi=800)
     plt.show()
 
 
