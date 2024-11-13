@@ -24,7 +24,7 @@ where
 From the optimal values 𝑉 computed in the algorithm, we can extract the optimal policy as 
 
 <p align="center">
-<img src="https://latex.codecogs.com/png.image?\large\dpi{300}\bg{white}\gamma(x_a,x_g,x_f)=\text{arg}\max_u\left[r(x_a,u)&plus;\sum_{x_a',x_g',x_f'\in\,\mathbb{X}}\phi(x_a'|x_a,u)\;\phi(x_g'|x_g)\;\phi(x_f'|x_f)V_k(x_a',x_g',x_f')\right]" width="10000" alt="Optimal Policy formula">
+<img src="https://latex.codecogs.com/png.image?\large\dpi{600}\bg{white}\gamma(x_a,x_g,x_f)=\text{arg}\max_u\left[r(x_a,u)&plus;\sum_{x_a',x_g',x_f'\in\,\mathbb{X}}\phi(x_a'|x_a,u)\;\phi(x_g'|x_g)\;\phi(x_f'|x_f)V_k(x_a',x_g',x_f')\right]" width="10000" alt="Optimal Policy formula">
 </p>
 
 
