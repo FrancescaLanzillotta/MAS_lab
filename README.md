@@ -11,7 +11,7 @@ The main step in algorithm hinges on a modified version of the Bellman optimalit
  where the value function is iteratively improved by optimizing with respect to the previous decisions.
 
 <p align="center">
-<img src="https://latex.codecogs.com/png.image?\dpi{600}\bg{white}V_{k&plus;1}(x)=\max_u\left[r(x,u)&plus;\sum_{x%27\in\mathbb{X}}\phi(x%27|x,u)V_k(x%27)\right]" width="522" height="80" alt="Value Iteration step formula">
+<img src="https://latex.codecogs.com/png.image?\large\dpi{600}\bg{white}V_{k&plus;1}(x_a,x_g,x_f)=\max_u\left[r(x_a,u)&plus;\sum_{x_a',x_g',x_f'\in\,\mathbb{X}}\phi(x_a'|x_a,u)\;\phi(x_g'|x_g)\;\phi(x_f'|x_f)V_k(x_a',x_g',x_f')\right]" width="800" alt="Value Iteration step formula">
 </p>
 where
 
@@ -24,7 +24,7 @@ where
 From the optimal values 𝑉 computed in the algorithm, we can extract the optimal policy as 
 
 <p align="center">
-<img src="https://latex.codecogs.com/png.image?\dpi{600}\bg{white}\gamma(x)=\text{arg}\max_u\left[r(x,u)&plus;\sum_{x%27\in\mathbb{X}}\phi(x%27|x,u)V(x%27)\right]" width="522" height="80" alt="Optimal Policy formula">
+<img src="https://latex.codecogs.com/png.image?\large\dpi{300}\bg{white}\gamma(x_a,x_g,x_f)=\text{arg}\max_u\left[r(x_a,u)&plus;\sum_{x_a',x_g',x_f'\in\,\mathbb{X}}\phi(x_a'|x_a,u)\;\phi(x_g'|x_g)\;\phi(x_f'|x_f)V_k(x_a',x_g',x_f')\right]V_{k&plus;1}(x_a,x_g,x_f)=\max_u\left[r(x_a,u)&plus;\sum_{x_a',x_g',x_f'\in\,\mathbb{X}}\phi(x_a'|x_a,u)\;\phi(x_g'|x_g)\;\phi(x_f'|x_f)V_k(x_a',x_g',x_f')\right]" width="10000" alt="Optimal Policy formula">
 </p>
 
 
