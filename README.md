@@ -75,8 +75,9 @@ the fail cell.
 <img src="/img/async-VI-5x5%20grid.gif" width="500" alt="Agent moving through the grid following the computed policy">
 </p>
 
+<p>
 This animation shows how the results of the algorithm can be used to move the agent to the goal while avoiding the fail 
 cell. All the objects in the grid start from a standard position. The agent, given its position and the positions of the
 other objects knows which action to perform. At each step, the goal and the fail cell can move randomly in one of the 
-adjacent cells, and we can see how the optimal policy changes accordingly.
+adjacent cells, and we can see how the optimal policy changes accordingly. </p>
 ---
